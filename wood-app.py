@@ -31,7 +31,7 @@ def find_near_max(grid, player, legals):
     for atype, index, dir_1, dir_2 in legals:
         pos = future_position(player, from_dir(dir_1))
         h = height(grid, pos)
-        if h > h_near:
+        if h > h_near and h < 4:
             h_near = h
             near = (atype, index, dir_1, dir_2)
     return near
@@ -63,11 +63,13 @@ while True:
     
     grid = []
     legals = []
+    players = []
     for i in xrange(size):
         row = raw_input()
         grid.append(row)
     for i in xrange(units_per_player):
-        unit_x, unit_y = [int(j) for j in raw_input().split()]
+        players.append( [int(j) for j in raw_input().split()])
+        legals.append([])
     for i in xrange(units_per_player):
         other_x, other_y = [int(j) for j in raw_input().split()]
     legal_actions = int(raw_input())
@@ -80,13 +82,14 @@ while True:
         index = int(index)
         
         
-        legals.append((atype, index, dir_1, dir_2))
+        legals[index].append((atype, index, dir_1, dir_2))
 
     print >> sys.stderr, draw_map(grid)
     
-    player = (unit_x, unit_y)
-    print >> sys.stderr, player
         
     for i in xrange(units_per_player):
-        near = find_near_max(grid, player, legals)
+        
+        player = players[i]
+
+        near = find_near_max(grid, player, legals[i])
         print "%s %s %s %s" % near
