@@ -2,11 +2,12 @@
 import sys
 import math
 
+DEBUG_MODE = False
 
 def get_raw():
     "Обертка для системной функции, для отображения вводимых параметров"
     raw = raw_input()
-    if False:
+    if DEBUG_MODE:
         print >> sys.stderr, raw
     return raw
 
@@ -111,13 +112,13 @@ class World(object):
         self.grid = []
         self.players = []
         self.enemies = []
-        self.legals = {}
 
     def update(self):
         "Считавыем параметры из консоли"
 
         self.grid = []
-        self.legals = {}
+        self.players = []
+        self.enemies = []
 
 
         for _ in xrange(self.size):
@@ -126,7 +127,6 @@ class World(object):
         for i in xrange(self.units_per_player):
             player = GamePlayer(i, get_raw())
             self.players.append(player)
-            self.legals[i] = []
 
         for i in xrange(self.units_per_player):
             enemy = GamePlayer(i, get_raw())
@@ -179,6 +179,8 @@ class StrategyWood(object):
 
     def find_near_max(self):
         "Ищем ближайшую точку"
+        if len(self.player.legals) == 0:
+            return None
 
         near = self.player.legals[0]
         pos = self.player.future_move(near)
@@ -193,6 +195,7 @@ class StrategyWood(object):
                 continue
 
             h = self.world.height(self.player.future_build(action))
+
             if h > h_near and h < 4:
                 h_near = h
                 near = action
@@ -203,6 +206,8 @@ class StrategyWood(object):
 
 
 if __name__ == '__main__':
+    
+    DEBUG_MODE = True
 
     # size = int(raw_input())
     # units_per_player = int(raw_input())
@@ -216,5 +221,9 @@ if __name__ == '__main__':
         s1 = StrategyWood(0, w)
 
         action = s1.get_action()
+
+        if action == None and w.units_per_player > 0:
+            s2 = StrategyWood(1, w)
+            action = s2.get_action()
 
         print action
