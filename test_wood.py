@@ -11,6 +11,8 @@ import woodapp as app
 
 class TestWorld(unittest.TestCase):
 
+
+
     def test_init_player(self):
         "Тестирование объекта Player"
 
@@ -178,16 +180,108 @@ MOVE&BUILD 1 W SE""")
 
         w.update()
 
-        print w.maps()
+        #print w.maps()
         
         s1 = StrategyWood(0, w)
 
-        for action in s1.player.legals:
-            print action, s1.player.future_move(action)
+        #for action in s1.player.legals:
+        #    print action, s1.player.future_move(action)
         #action = s1.get_action()
 
+    def test_build_and_grow(self):
 
-        print action
+        sys.stdin = StringIO.StringIO("""7
+2
+...3...
+..003..
+.00000.
+0000000
+.00330.
+..000..
+...0...
+4 1
+1 3
+3 4
+3 6
+62
+MOVE&BUILD 0 NW S
+MOVE&BUILD 0 NW SE
+MOVE&BUILD 0 NW SW
+MOVE&BUILD 0 S E
+MOVE&BUILD 0 S N
+MOVE&BUILD 0 S NW
+MOVE&BUILD 0 S S
+MOVE&BUILD 0 S SE
+MOVE&BUILD 0 S SW
+MOVE&BUILD 0 S W
+MOVE&BUILD 0 SE NW
+MOVE&BUILD 0 SE S
+MOVE&BUILD 0 SE SE
+MOVE&BUILD 0 SE SW
+MOVE&BUILD 0 SE W
+MOVE&BUILD 0 SW E
+MOVE&BUILD 0 SW N
+MOVE&BUILD 0 SW NE
+MOVE&BUILD 0 SW NW
+MOVE&BUILD 0 SW S
+MOVE&BUILD 0 SW SE
+MOVE&BUILD 0 SW SW
+MOVE&BUILD 0 SW W
+MOVE&BUILD 0 W E
+MOVE&BUILD 0 W N
+MOVE&BUILD 0 W S
+MOVE&BUILD 0 W SE
+MOVE&BUILD 0 W SW
+MOVE&BUILD 0 W W
+MOVE&BUILD 1 E E
+MOVE&BUILD 1 E N
+MOVE&BUILD 1 E NE
+MOVE&BUILD 1 E NW
+MOVE&BUILD 1 E S
+MOVE&BUILD 1 E SW
+MOVE&BUILD 1 E W
+MOVE&BUILD 1 N E
+MOVE&BUILD 1 N NE
+MOVE&BUILD 1 N S
+MOVE&BUILD 1 N SE
+MOVE&BUILD 1 N SW
+MOVE&BUILD 1 NE E
+MOVE&BUILD 1 NE N
+MOVE&BUILD 1 NE NE
+MOVE&BUILD 1 NE S
+MOVE&BUILD 1 NE SE
+MOVE&BUILD 1 NE SW
+MOVE&BUILD 1 NE W
+MOVE&BUILD 1 S E
+MOVE&BUILD 1 S N
+MOVE&BUILD 1 S NE
+MOVE&BUILD 1 S NW
+MOVE&BUILD 1 S SE
+MOVE&BUILD 1 SE N
+MOVE&BUILD 1 SE NE
+MOVE&BUILD 1 SE NW
+MOVE&BUILD 1 SE S
+MOVE&BUILD 1 SE SE
+MOVE&BUILD 1 SE W
+MOVE&BUILD 1 W E
+MOVE&BUILD 1 W NE
+MOVE&BUILD 1 W SE
+
+""")
+        w = World()
+
+        w.update()
+
+        print w.maps()
+
+        s1 = StrategyWood(0, w)
+
+        action = s1.get_action()
+
+
+        print action, '222'
+
+
 
 
     def test_from_dir(self):

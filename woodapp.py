@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import math
+from operator import attrgetter
 
 DEBUG_MODE = False
 
@@ -30,6 +31,13 @@ class GamePlayer(object):
         "Определяем текущую позицию игрока"
         return self.x, self.y
 
+    def future(self, pos):
+        "Вычисляем будующую позицию"
+        x, y = self.x, self.y
+        dx, dy = pos
+        return x + dx, y + dy
+
+
     def future_move(self, action):
         "Вычисляем будующую позицию"
         x, y = self.x, self.y
@@ -47,6 +55,12 @@ class GamePlayer(object):
         x, y  = x + action.dir_2[0], y + action.dir_2[1]
 
         return x, y
+
+    def future_push(self, from_player):
+        "Определяем следуюущую позицию после толчка"
+        dx, dy = self.x - from_player.x, self.y - from_player.y
+
+        return self.x + dx, self.y + dy
 
     def __repr__(self):
         return "%d: %d %d" % (self.index, self.x, self.y)
@@ -113,6 +127,63 @@ class World(object):
         self.players = []
         self.enemies = []
 
+
+    def moves(self, player):
+        "Определяем список доступных ходов"
+        cells = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        cur_height = self.height(player.position())
+
+        excluded = []
+        for border in self.players + self.enemies:
+            excluded.append(border.position())
+
+        av_moves = []
+        for next_cell in cells:
+            next_pos = player.future(next_cell)
+            #print next_pos
+            next_height = self.height(next_pos)
+
+            if  next_height - cur_height < 1 and next_height < 4 and next_pos not in excluded:
+                av_moves.append(next_cell)
+
+        return av_moves
+
+
+    def builds(self, pos):
+        "Определяем список доступных ходов"
+        cells = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+
+        excluded = []
+        for border in self.players + self.enemies:
+            excluded.append(border.position())
+
+        x, y = pos
+
+        av_builds = []
+        for dx, dy in cells:
+            next_pos = x + dx, y + dy
+            #print next_pos
+            next_height = self.height(next_pos)
+
+            if next_height < 4 and next_pos not in excluded:
+                av_builds.append((dx, dy))
+
+        return av_builds
+
+    def pushes(self, player):
+        "Определяем список доступных ходов"
+        cells = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+
+        x, y = player.position()
+        av_pushes = []
+        for enemy in self.enemies:
+            ex, ey = enemy.position()
+            dx, dy = x - ex, y - ey
+            if abs(dx) <= 1 and abs(dy) <= 1:
+                av_pushes.append(enemy)
+
+        return av_pushes
+
     def update(self):
         "Считавыем параметры из консоли"
 
@@ -164,8 +235,12 @@ class World(object):
 
     def height(self, forcell):
         x, y = forcell
-        # переворачиваем координатную сетку
-        return self.grid[y][x]
+        value = self.grid[y][x]
+        if value == '.' or x < 0 or y < 0 or x >= self.size or y >= self.size:
+            # переворачиваем координатную сетку
+            return 4
+        else:
+            return int(value)
 
         
 class StrategyWood(object):
@@ -176,6 +251,8 @@ class StrategyWood(object):
         "Инициализируем стратегию"
         self.player = world.players[index]
         self.world = world
+        self.solution = []
+
 
     def find_near_max(self):
         "Ищем ближайшую точку"
@@ -187,6 +264,9 @@ class StrategyWood(object):
 
         h_near = self.world.height(pos)
 
+        # данные для оптимизации
+        opt_data = []
+
         for action in self.player.legals:
             pos = self.player.future_move(action)
 
@@ -194,12 +274,27 @@ class StrategyWood(object):
             if not self.world.available_move(pos):
                 continue
 
-            h = self.world.height(self.player.future_build(action))
 
-            if h > h_near and h < 4:
-                h_near = h
-                near = action
-        return near
+            mh = self.world.height(self.player.future_move(action))
+            bh = self.world.height(self.player.future_build(action))
+
+            opt_data.append(
+                {
+                    'action': action,
+                    'value': mh*3 - bh,
+                    'bh':bh,
+                    'mh':mh,
+                    'available':int(bh < 3)
+                }
+            )
+
+        solution = sorted(opt_data, key=lambda el: el['value'], reverse=True)
+        #print solution
+
+        if len(solution) > 0:
+            return solution[0]['action']
+        else:
+            return None
 
     def get_action(self):
         return self.find_near_max()
