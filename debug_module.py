@@ -5,43 +5,73 @@ import StringIO
 import itertools
 import random
 
+import time
+
 from woodapp import GameAction, GamePlayer, World, StrategyWood
+
+t = time.time()
+
         
-sys.stdin = StringIO.StringIO("""7
+sys.stdin = StringIO.StringIO("""5
 2
-...2...
-..033..
-.00344.
-0000244
-.00010.
-..000..
-...0...
+00033
+00013
+00000
+00000
+00000
 4 1
-5 4
-3 2
-1 2
-21
-MOVE&BUILD 0 NW S
-MOVE&BUILD 0 NW SE
-MOVE&BUILD 0 NW SW
+4 3
+3 0
+1 3
+48
+MOVE&BUILD 0 N S
+MOVE&BUILD 0 N SW
+MOVE&BUILD 0 S N
+MOVE&BUILD 0 S NW
+MOVE&BUILD 0 S SW
+MOVE&BUILD 0 S W
+MOVE&BUILD 0 SW E
+MOVE&BUILD 0 SW N
+MOVE&BUILD 0 SW NE
+MOVE&BUILD 0 SW NW
+MOVE&BUILD 0 SW S
+MOVE&BUILD 0 SW SW
+MOVE&BUILD 0 SW W
 MOVE&BUILD 0 W E
-MOVE&BUILD 0 W N
+MOVE&BUILD 0 W NE
+MOVE&BUILD 0 W NW
+MOVE&BUILD 0 W S
+MOVE&BUILD 0 W SE
 MOVE&BUILD 0 W SW
 MOVE&BUILD 0 W W
+MOVE&BUILD 1 N NW
+MOVE&BUILD 1 N S
+MOVE&BUILD 1 N SW
+MOVE&BUILD 1 N W
+MOVE&BUILD 1 NW E
+MOVE&BUILD 1 NW N
+MOVE&BUILD 1 NW NW
+MOVE&BUILD 1 NW S
+MOVE&BUILD 1 NW SE
+MOVE&BUILD 1 NW SW
+MOVE&BUILD 1 NW W
+MOVE&BUILD 1 S N
+MOVE&BUILD 1 S NW
+MOVE&BUILD 1 S W
+MOVE&BUILD 1 SW E
 MOVE&BUILD 1 SW N
 MOVE&BUILD 1 SW NE
 MOVE&BUILD 1 SW NW
-MOVE&BUILD 1 SW SW
 MOVE&BUILD 1 SW W
 MOVE&BUILD 1 W E
 MOVE&BUILD 1 W N
+MOVE&BUILD 1 W NE
 MOVE&BUILD 1 W NW
 MOVE&BUILD 1 W S
+MOVE&BUILD 1 W SE
 MOVE&BUILD 1 W SW
 MOVE&BUILD 1 W W
-PUSH&BUILD 0 SW S
-PUSH&BUILD 0 SW SW
-PUSH&BUILD 0 SW W
+PUSH&BUILD 0 NW W
 """)
 w = World()
 
@@ -51,7 +81,12 @@ w.update()
 
 s1 = StrategyWood(0, w)
 
-#print s1.get_action()
+print s1.get_action()
 
-print w.calc_potential((3,0), (3,1))
-print w.calc_potential((3,0), (2,1))
+print s1.world.calc_potential((3,0), (4,0))
+
+
+
+
+#--------
+print "%5.2lf" % ((time.time() -t)*20)

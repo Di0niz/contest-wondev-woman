@@ -60,16 +60,10 @@ class GamePlayer(object):
     def future_build(self, action):
         "Вычисляем координату строительства"
         cur = self.x, self.y
-        if action.atype == "MOVE&BUILD":
-            cur = add_pos(cur, action.dir_1)
+
+        cur = add_pos(cur, action.dir_1)
 
         return add_pos(cur, action.dir_2)
-
-    def future_push(self, from_player):
-        "Определяем следуюущую позицию после толчка"
-        dx, dy = self.x - from_player.x, self.y - from_player.y
-
-        return self.x + dx, self.y + dy
 
     def __repr__(self):
         return "%d: %d %d" % (self.index, self.x, self.y)
@@ -136,7 +130,7 @@ class World(object):
         self.players = []
         self.enemies = []
 
-        self.__cells__ = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        self.__cells__ = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 0), (0, 1), (1, -1), (1, 0), (1, 1)]
 
     def moves(self, player):
         "Определяем список доступных ходов"
@@ -162,9 +156,6 @@ class World(object):
         sum_height = 0
         #считаем, что если уровень ниже допустимого, тогда мощность падает
         cur_height = self.height(pos)
-        
-        av_moves = 0
-
 
         for cell in self.__cells__:
             next_pos = add_pos(pos, cell)
@@ -176,7 +167,7 @@ class World(object):
                 if next_pos == build_at:
                     height += 1
 
-                sum_height = sum_height + (height if height < 4 and height - cur_height < 2 else 0)
+                sum_height += (height if height < 4 else 0)
 
         return sum_height
 
@@ -184,26 +175,23 @@ class World(object):
     def builds(self, pos):
         "Определяем список доступных ходов"
         excluded = []
+
         for border in self.players + self.enemies:
             excluded.append(border.position())
 
-        x, y = pos
-
         av_builds = []
-        for dx, dy in self.__cells__:
-            next_pos = x + dx, y + dy
+        for cell in self.__cells__:
+            next_pos = add_pos(pos, cell)
             #print next_pos
             next_height = self.height(next_pos)
 
             if next_height < 4 and next_pos not in excluded:
-                av_builds.append((dx, dy))
+                av_builds.append(cell)
 
         return av_builds
 
     def pushes(self, player):
         "Определяем список доступных ходов"
-        cells = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-
         x, y = player.position()
         av_pushes = []
         for enemy in self.enemies:
@@ -292,6 +280,7 @@ class StrategyWood(object):
         if len(self.player.legals) == 0:
             return None
 
+        h_cur = self.world.height(self.player.position())
         near = self.player.legals[0]
         pos = self.player.future_move(near)
 
@@ -304,7 +293,7 @@ class StrategyWood(object):
             stay_at = self.player.future_move(action)
 
             # определеяем доступность перемещения
-            if not self.world.available_move(stay_at):
+            if not self.world.position_available(stay_at):
                 continue
 
             build_at = self.player.future_build(action)
@@ -313,22 +302,40 @@ class StrategyWood(object):
             bh = self.world.height(build_at)
             available = int(bh < 4)
             potential = self.world.calc_potential(stay_at, build_at)
+            bonus = mh - h_cur
 
-            opt_data.append(
-                {
-                    'action': action,
-                    'value': potential + available + mh, #mh*3 - bh,
-                    'potential': potential,
-                    'stay_at': stay_at,
-                    'build_at': build_at,
-                    'bh':bh,
-                    'mh':mh,
-                    'available':available
-                }
-            )
+            if action.atype == "PUSH&BUILD" and bh == 0:
+                
+                opt_data.append(
+                    {
+                        'action': action,
+                        'value': 100, #mh*3 - bh,
+                        'potential': potential,
+                        'stay_at': stay_at,
+                        'build_at': build_at,
+                        'bh':bh,
+                        'mh':mh,
+                        'available':available
+                    }
+                )
+
+            else:
+                opt_data.append(
+                    {
+                        'action': action,
+                        'value': potential + available + bonus, #mh*3 - bh,
+                        'potential': potential,
+                        'stay_at': stay_at,
+                        'build_at': build_at,
+                        'bh':bh,
+                        'mh':mh,
+                        'available':available
+                    }
+                )
 
         solution = sorted(opt_data, key=lambda el: el['value'], reverse=True)
-        #print solution
+
+        #print "\n".join(str(x) for x in solution)
 
         if len(solution) > 0:
             return solution[0]['action']
