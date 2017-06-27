@@ -12,6 +12,18 @@ def get_raw():
         print >> sys.stderr, raw
     return raw
 
+def add_pos(point, point_at):
+    "складываем две координаты"
+    pointx, pointy = point
+    point_atx, point_aty = point_at
+    return (pointx + point_atx, pointy + point_aty)
+
+def sub_pos(point, point_at):
+    "Вычитаем две координаты"
+    pointx, pointy = point
+    point_atx, point_aty = point_at
+    return (pointx - point_atx, pointy - point_aty)
+
 
 class GamePlayer(object):
     "Описание возможных действий игрока"
@@ -40,21 +52,18 @@ class GamePlayer(object):
 
     def future_move(self, action):
         "Вычисляем будующую позицию"
-        x, y = self.x, self.y
+        cur = self.x, self.y
         if action.atype == "MOVE&BUILD":
-            x, y  = x + action.dir_1[0], y + action.dir_1[1]
-
-        return x, y
+            cur = add_pos(cur, action.dir_1)
+        return cur
 
     def future_build(self, action):
         "Вычисляем координату строительства"
-        x, y = self.x, self.y
+        cur = self.x, self.y
         if action.atype == "MOVE&BUILD":
-            x, y  = x + action.dir_1[0], y+action.dir_1[1]
+            cur = add_pos(cur, action.dir_1)
 
-        x, y  = x + action.dir_2[0], y + action.dir_2[1]
-
-        return x, y
+        return add_pos(cur, action.dir_2)
 
     def future_push(self, from_player):
         "Определяем следуюущую позицию после толчка"
@@ -127,10 +136,10 @@ class World(object):
         self.players = []
         self.enemies = []
 
+        self.__cells__ = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
     def moves(self, player):
         "Определяем список доступных ходов"
-        cells = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         cur_height = self.height(player.position())
 
         excluded = []
@@ -138,7 +147,7 @@ class World(object):
             excluded.append(border.position())
 
         av_moves = []
-        for next_cell in cells:
+        for next_cell in self.__cells__:
             next_pos = player.future(next_cell)
             #print next_pos
             next_height = self.height(next_pos)
@@ -148,11 +157,32 @@ class World(object):
 
         return av_moves
 
+    def calc_potential(self, pos, build_at=(-1, 1)):
+        "расчитываем сумму возможных вершин, в которые можно попасть из центра"
+        sum_height = 0
+        #считаем, что если уровень ниже допустимого, тогда мощность падает
+        cur_height = self.height(pos)
+        
+        av_moves = 0
+
+
+        for cell in self.__cells__:
+            next_pos = add_pos(pos, cell)
+
+            if self.position_available(next_pos):
+                height = self.height(next_pos)
+                # если планируем строить в этой точке
+                # увеличиваем
+                if next_pos == build_at:
+                    height += 1
+
+                sum_height = sum_height + (height if height < 4 and height - cur_height < 2 else 0)
+
+        return sum_height
+
 
     def builds(self, pos):
         "Определяем список доступных ходов"
-        cells = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-
         excluded = []
         for border in self.players + self.enemies:
             excluded.append(border.position())
@@ -160,7 +190,7 @@ class World(object):
         x, y = pos
 
         av_builds = []
-        for dx, dy in cells:
+        for dx, dy in self.__cells__:
             next_pos = x + dx, y + dy
             #print next_pos
             next_height = self.height(next_pos)
@@ -232,11 +262,14 @@ class World(object):
                 return False
         return True
 
+    def position_available(self, pos):
+        posx, posy = pos
+        return not (posx < 0 or posy < 0 or posx >= self.size or posy >= self.size)
 
     def height(self, forcell):
         x, y = forcell
         value = self.grid[y][x]
-        if value == '.' or x < 0 or y < 0 or x >= self.size or y >= self.size:
+        if value == '.' and self.position_available(forcell):
             # переворачиваем координатную сетку
             return 4
         else:
@@ -268,23 +301,29 @@ class StrategyWood(object):
         opt_data = []
 
         for action in self.player.legals:
-            pos = self.player.future_move(action)
+            stay_at = self.player.future_move(action)
 
             # определеяем доступность перемещения
-            if not self.world.available_move(pos):
+            if not self.world.available_move(stay_at):
                 continue
 
+            build_at = self.player.future_build(action)
 
-            mh = self.world.height(self.player.future_move(action))
-            bh = self.world.height(self.player.future_build(action))
+            mh = self.world.height(stay_at)
+            bh = self.world.height(build_at)
+            available = int(bh < 4)
+            potential = self.world.calc_potential(stay_at, build_at)
 
             opt_data.append(
                 {
                     'action': action,
-                    'value': mh*3 - bh,
+                    'value': potential + available + mh, #mh*3 - bh,
+                    'potential': potential,
+                    'stay_at': stay_at,
+                    'build_at': build_at,
                     'bh':bh,
                     'mh':mh,
-                    'available':int(bh < 3)
+                    'available':available
                 }
             )
 
@@ -301,7 +340,7 @@ class StrategyWood(object):
 
 
 if __name__ == '__main__':
-    
+
     DEBUG_MODE = True
 
     # size = int(raw_input())
