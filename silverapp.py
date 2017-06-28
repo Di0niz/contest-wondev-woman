@@ -185,7 +185,7 @@ class World(object):
                     min_dh = min(min_dh, height - cur_height)
                     
         # если в заподне, тогда выходим 
-        if min_dh > 1:
+        if min_dh > 1 and cur_height < 2:
             sum_height = 0
 
         return sum_height
@@ -369,7 +369,7 @@ class StrategyWood(object):
             f_height = f_world.height(f_player.position())
             f_makegold = int(f_height == 3 and action.atype == "MOVE&BUILD")
 
-            Eval = 3*f_makegold + 3*f_height + fp - 2*fe
+            Eval = 2.0*f_makegold + 4.0*f_height + 0.4*fp - 1.0*fe
 
 
             opt_data.append(
@@ -416,22 +416,25 @@ if __name__ == '__main__':
 
         s1 = StrategyWood(0, w)
 
-        solution = s1.get_action()
+        solution1 = s1.get_action()
         
         t1 = (time.time() - t)*1000
         
-        if t1 < 50 and (w.units_per_player > 0 or solution is None):
-            solution1 = solution
+        if t1 < 50 and (w.units_per_player > 0):
 
             s2 = StrategyWood(1, w)
             solution2 = s2.get_action()
-
+            
             if solution1 is None:
                 solution = solution2
             elif solution2 is None:
                 solution = solution1
-            elif solution1['value'] < solution2['value']:
-                solution = solution2
+            elif solution1['value'] > solution2['value']:
+                solution = solution1
+            else:
+                solution = solution1
+        else:
+            solution = solution1
 
 
         print solution['action']
