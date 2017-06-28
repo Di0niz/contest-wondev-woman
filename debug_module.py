@@ -14,35 +14,53 @@ t = time.time()
         
 sys.stdin = StringIO.StringIO("""5
 2
-30304
-33223
-30023
+34434
+44442
+11201
 00000
 00000
-4 1
-3 0
+0 0
+2 3
 -1 -1
--1 -1
-19
-MOVE&BUILD 0 S N
-MOVE&BUILD 0 S NW
-MOVE&BUILD 0 S S
-MOVE&BUILD 0 S SW
-MOVE&BUILD 0 S W
-MOVE&BUILD 0 SW E
-MOVE&BUILD 0 SW N
-MOVE&BUILD 0 SW NE
-MOVE&BUILD 0 SW NW
-MOVE&BUILD 0 SW S
-MOVE&BUILD 0 SW SE
-MOVE&BUILD 0 SW SW
-MOVE&BUILD 0 SW W
-MOVE&BUILD 0 W E
-MOVE&BUILD 0 W NW
-MOVE&BUILD 0 W S
-MOVE&BUILD 0 W SE
-MOVE&BUILD 0 W SW
-MOVE&BUILD 0 W W
+3 2
+36
+MOVE&BUILD 1 E E
+MOVE&BUILD 1 E NE
+MOVE&BUILD 1 E NW
+MOVE&BUILD 1 E S
+MOVE&BUILD 1 E SE
+MOVE&BUILD 1 E SW
+MOVE&BUILD 1 E W
+MOVE&BUILD 1 NW E
+MOVE&BUILD 1 NW S
+MOVE&BUILD 1 NW SE
+MOVE&BUILD 1 NW SW
+MOVE&BUILD 1 NW W
+MOVE&BUILD 1 S E
+MOVE&BUILD 1 S N
+MOVE&BUILD 1 S NE
+MOVE&BUILD 1 S NW
+MOVE&BUILD 1 S W
+MOVE&BUILD 1 SE E
+MOVE&BUILD 1 SE N
+MOVE&BUILD 1 SE NE
+MOVE&BUILD 1 SE NW
+MOVE&BUILD 1 SE W
+MOVE&BUILD 1 SW E
+MOVE&BUILD 1 SW N
+MOVE&BUILD 1 SW NE
+MOVE&BUILD 1 SW NW
+MOVE&BUILD 1 SW W
+MOVE&BUILD 1 W E
+MOVE&BUILD 1 W N
+MOVE&BUILD 1 W NE
+MOVE&BUILD 1 W NW
+MOVE&BUILD 1 W S
+MOVE&BUILD 1 W SE
+MOVE&BUILD 1 W SW
+MOVE&BUILD 1 W W
+PUSH&BUILD 1 NE E
+
 
 """)
 w = World()
@@ -54,12 +72,26 @@ w.update()
 
 s1 = StrategyWood(0, w)
 
-print s1.get_action()
 
-#print s1.world.calc_potential((3,0), (4,0))
+solution = s1.get_action()
+
+t1 = (time.time() - t)*1000
+
+if t1 < 50 and (w.units_per_player > 0 or solution is None):
+    solution1 = solution
+
+    s2 = StrategyWood(1, w)
+
+    solution2 = s2.get_action()
+    
+    if solution1 is None:
+        solution = solution2
+    elif solution1['value'] < solution2['value']:
+        solution = solution2
 
 
-print w.maps()
+print solution['action']
+
 
 #--------
-print "%5.2lf" % ((time.time() -t)*20)
+print "%5.2lf" % ((time.time() -t)*1000) < 50

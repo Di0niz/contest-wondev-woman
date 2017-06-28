@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import math
-from operator import attrgetter
+import time
 
 DEBUG_MODE = False
 
@@ -408,6 +408,9 @@ if __name__ == '__main__':
 
     # game loop
     while True:
+        
+        t = time.time()
+        
 
         w.update()
 
@@ -415,14 +418,19 @@ if __name__ == '__main__':
 
         solution = s1.get_action()
         
-        if w.units_per_player > 0 or solution is None:
+        t1 = (time.time() - t)*1000
+        
+        if t1 < 50 and (w.units_per_player > 0 or solution is None):
             solution1 = solution
 
             s2 = StrategyWood(1, w)
-    
             solution2 = s2.get_action()
-            
-            if solution1 is None or solution1['value'] < solution2['value']:
+
+            if solution1 is None:
+                solution = solution2
+            elif solution2 is None:
+                solution = solution1
+            elif solution1['value'] < solution2['value']:
                 solution = solution2
 
 
