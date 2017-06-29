@@ -28,7 +28,7 @@ def dist_pos(point, point_at):
     "определяем расстояние между точками"
     pointx, pointy = point
     point_atx, point_aty = point_at
-    return math.sqrt(((pointx - point_atx)**2 + (pointy - point_aty)**2))
+    return max(abs(pointx - point_atx), abs(pointy - point_aty))
 
 
 class GamePlayer(object):
@@ -168,7 +168,7 @@ class World(object):
 
         return av_moves
 
-    def calc_potential(self, position):
+    def calc_potential(self, position, check_block = True):
         "расчитываем сумму возможных вершин, в которые можно попасть из центра"
         sum_height = 0
         #считаем, что если уровень ниже допустимого, тогда мощность падает
@@ -198,14 +198,15 @@ class World(object):
                 min_dh = min(min_dh, height - cur_height)
 
         # если в заподне, тогда выходим
-        if min_dh > 1 and cur_height < 2:
+        if min_dh > 1 and cur_height < 2 and check_block:
             sum_height = 0
 
         # если себя замуровал, тогда выходим из клетки
-        if min_height == 4:
+        if min_height == 4 and check_block:
             sum_height = 0
 
         return sum_height
+
 
 
     def builds(self, pos):
@@ -393,25 +394,26 @@ class StrategyWood(object):
 
             f_player = f_world.players[self.player.index]
 
+            f_build_at = add_pos(f_player.position(), action.dir_2)
+
             fp = 0.0
             fp = f_world.calc_potential(f_player.position())
 
             fb = 0.0
-            fb = f_world.calc_potential(add_pos(f_player.position(), action.dir_2))
+            fb = f_world.calc_potential(f_build_at, False)
 
             fe = 0.0
-            f_dist = 0.0
-
             for player in f_world.enemies:
                 enemy_position = player.position()
                 fe += f_world.calc_potential(enemy_position)
-                if enemy_position != (-1, -1):
-                    f_dist += dist_pos(f_player.position(), enemy_position)
+
+            f_dist = dist_pos(self.player.position(), f_build_at)
 
             f_height = f_world.height(f_player.position())
             f_makegold = int(f_height == 3 and action.atype == "MOVE&BUILD")
+            f_build_near = int(self.player.position() == f_build_at)
 
-            Eval = 2.0*f_makegold + 2.0*f_height + 0.2*fp + 0.2*fb - 0.1*fe - 0.1*f_dist
+            Eval = 2.0*f_makegold + 3.0*f_height + 1.5*fp + 0.3*fb - 1.3*fe - 0.5*f_dist
             #Eval = 2.0*f_makegold + 4.0*f_height + 0.4*fp - 1.0*fe
 
             feature_set = {
@@ -425,15 +427,14 @@ class StrategyWood(object):
                 'f_enemy': fe
             }
 
-            print feature_set
-            print f_world.maps(f_player.position(), [x.position() for x in f_world.enemies])
+            # print feature_set
+            # print f_world.maps(self.player.position(), [f_build_at])
 
             opt_data.append(feature_set)
 
         solutions = sorted(opt_data, key=lambda el: el['value'], reverse=True)
 
-        print "\n".join(str(x) for x in solutions)
-
+        # print "\n".join(str(x) for x in solutions)
         if len(solutions) > 0:
             return solutions[0]
         else:
