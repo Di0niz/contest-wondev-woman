@@ -1,3 +1,4 @@
+590/2299
 
 
 The game continues until there is no possible move left.
